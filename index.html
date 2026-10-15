@@ -1,0 +1,630 @@
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>One Container Tracker</title>
+
+<style>
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background: #f1f5f9;
+    color: #1e293b;
+}
+
+header {
+    background: #0f172a;
+    color: white;
+    padding: 24px 6%;
+}
+
+header h1 {
+    margin-bottom: 8px;
+}
+
+header p {
+    color: #cbd5e1;
+}
+
+.container {
+    width: 90%;
+    max-width: 1200px;
+    margin: 28px auto;
+}
+
+.stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.stat-card, .panel {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 3px 12px #0f172a0d;
+}
+
+.stat-card p {
+    color: #64748b;
+    margin-bottom: 12px;
+}
+
+.stat-card h2 {
+    font-size: 28px;
+}
+
+.toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 18px;
+}
+
+input, select, button {
+    padding: 11px 13px;
+    border: 1px solid #cbd5e1;
+    border-radius: 7px;
+    font-size: 14px;
+}
+
+input, select {
+    background: white;
+}
+
+#search {
+    flex: 1;
+    min-width: 180px;
+}
+
+button {
+    background: #2563eb;
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+
+button:hover {
+    opacity: 0.85;
+}
+
+.secondary {
+    background: #475569;
+}
+
+.danger {
+    background: #dc2626;
+}
+
+.table-wrap {
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 850px;
+}
+
+th, td {
+    text-align: left;
+    padding: 14px 12px;
+    border-bottom: 1px solid #e2e8f0;
+    font-size: 13px;
+}
+
+th {
+    color: #475569;
+    background: #f8fafc;
+}
+
+.status {
+    padding: 6px 9px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: bold;
+    display: inline-block;
+}
+
+.transit {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.arrived {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.delayed {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.pending {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.actions {
+    display: flex;
+    gap: 6px;
+}
+
+.actions button {
+    padding: 7px 9px;
+}
+
+footer {
+    text-align: center;
+    color: #64748b;
+    padding: 25px;
+    font-size: 13px;
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: #0f172acc;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    z-index: 10;
+}
+
+.modal-content {
+    background: white;
+    padding: 24px;
+    border-radius: 12px;
+    width: 100%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.modal-content h2 {
+    margin-bottom: 18px;
+}
+
+.form-group {
+    margin-bottom: 14px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 13px;
+    font-weight: bold;
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+}
+
+.form-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.form-buttons button {
+    flex: 1;
+}
+
+.empty {
+    text-align: center;
+    color: #64748b;
+    padding: 30px;
+}
+
+@media (max-width: 600px) {
+    .container {
+        width: 94%;
+    }
+
+    header {
+        padding: 22px 5%;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <h1>One Container Tracker</h1>
+    <p>Dashboard monitoring kontainer dan pengiriman logistik</p>
+</header>
+
+<main class="container">
+
+    <section class="stats">
+        <div class="stat-card">
+            <p>Total Kontainer</p>
+            <h2 id="total">0</h2>
+        </div>
+
+        <div class="stat-card">
+            <p>Dalam Perjalanan</p>
+            <h2 id="transitCount">0</h2>
+        </div>
+
+        <div class="stat-card">
+            <p>Sudah Tiba</p>
+            <h2 id="arrivedCount">0</h2>
+        </div>
+
+        <div class="stat-card">
+            <p>Terlambat</p>
+            <h2 id="delayedCount">0</h2>
+        </div>
+    </section>
+
+    <section class="panel">
+        <h2 style="margin-bottom:18px;">Data Kontainer</h2>
+
+        <div class="toolbar">
+            <input
+                type="search"
+                id="search"
+                placeholder="Cari nomor kontainer, asal, tujuan..."
+            >
+
+            <select id="filter">
+                <option value="all">Semua Status</option>
+                <option value="Dalam Perjalanan">Dalam Perjalanan</option>
+                <option value="Sudah Tiba">Sudah Tiba</option>
+                <option value="Terlambat">Terlambat</option>
+                <option value="Menunggu">Menunggu</option>
+            </select>
+
+            <button onclick="openModal()">+ Tambah Data</button>
+            <button class="secondary" onclick="exportCSV()">Export CSV</button>
+        </div>
+
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>No.</th>
+                        <th>Nomor Kontainer</th>
+                        <th>Asal</th>
+                        <th>Tujuan</th>
+                        <th>Estimasi Tiba</th>
+                        <th>Status</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody"></tbody>
+            </table>
+        </div>
+    </section>
+
+</main>
+
+<footer>
+    One Container Tracker | Demo Aplikasi Manajemen Logistik
+</footer>
+
+<div class="modal" id="modal">
+    <div class="modal-content">
+        <h2 id="modalTitle">Tambah Kontainer</h2>
+
+        <form id="containerForm">
+            <div class="form-group">
+                <label for="containerNo">Nomor Kontainer</label>
+                <input id="containerNo" required
+                       placeholder="Contoh: CONT-1004">
+            </div>
+
+            <div class="form-group">
+                <label for="origin">Lokasi Asal</label>
+                <input id="origin" required
+                       placeholder="Contoh: Jakarta">
+            </div>
+
+            <div class="form-group">
+                <label for="destination">Lokasi Tujuan</label>
+                <input id="destination" required
+                       placeholder="Contoh: Bandar Lampung">
+            </div>
+
+            <div class="form-group">
+                <label for="arrival">Estimasi Tiba</label>
+                <input id="arrival" type="date" required>
+            </div>
+
+            <div class="form-group">
+                <label for="status">Status Pengiriman</label>
+                <select id="status" required>
+                    <option value="Menunggu">Menunggu</option>
+                    <option value="Dalam Perjalanan">Dalam Perjalanan</option>
+                    <option value="Sudah Tiba">Sudah Tiba</option>
+                    <option value="Terlambat">Terlambat</option>
+                </select>
+            </div>
+
+            <div class="form-buttons">
+                <button type="submit">Simpan Data</button>
+                <button type="button" class="secondary"
+                        onclick="closeModal()">Batal</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+const initialData = [
+    {
+        id: 1,
+        containerNo: "CONT-1001",
+        origin: "Jakarta",
+        destination: "Palembang",
+        arrival: "2026-10-18",
+        status: "Dalam Perjalanan"
+    },
+    {
+        id: 2,
+        containerNo: "CONT-1002",
+        origin: "Surabaya",
+        destination: "Bandar Lampung",
+        arrival: "2026-10-14",
+        status: "Terlambat"
+    },
+    {
+        id: 3,
+        containerNo: "CONT-1003",
+        origin: "Medan",
+        destination: "Jakarta",
+        arrival: "2026-10-20",
+        status: "Menunggu"
+    }
+];
+
+let containers = loadData();
+let editId = null;
+
+function loadData() {
+    try {
+        const saved = localStorage.getItem("oneContainerData");
+        return saved ? JSON.parse(saved) : initialData;
+    } catch (error) {
+        return initialData;
+    }
+}
+
+function saveData() {
+    localStorage.setItem(
+        "oneContainerData",
+        JSON.stringify(containers)
+    );
+}
+
+function escapeHTML(value) {
+    return String(value).replace(/[&<>"']/g, function(char) {
+        return {
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': "&quot;",
+            "'": "&#039;"
+        }[char];
+    });
+}
+
+function statusClass(status) {
+    const classes = {
+        "Dalam Perjalanan": "transit",
+        "Sudah Tiba": "arrived",
+        "Terlambat": "delayed",
+        "Menunggu": "pending"
+    };
+
+    return classes[status] || "pending";
+}
+
+function renderTable() {
+    const tbody = document.getElementById("tableBody");
+    const keyword = document.getElementById("search")
+        .value.toLowerCase();
+    const filter = document.getElementById("filter").value;
+
+    const filtered = containers.filter(item => {
+        const text = [
+            item.containerNo,
+            item.origin,
+            item.destination
+        ].join(" ").toLowerCase();
+
+        return text.includes(keyword) &&
+            (filter === "all" || item.status === filter);
+    });
+
+    document.getElementById("total").textContent =
+        containers.length;
+
+    document.getElementById("transitCount").textContent =
+        containers.filter(x => x.status === "Dalam Perjalanan").length;
+
+    document.getElementById("arrivedCount").textContent =
+        containers.filter(x => x.status === "Sudah Tiba").length;
+
+    document.getElementById("delayedCount").textContent =
+        containers.filter(x => x.status === "Terlambat").length;
+
+    if (filtered.length === 0) {
+        tbody.innerHTML =
+            '<tr><td colspan="7" class="empty">Data tidak ditemukan.</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = filtered.map((item, index) => `
+        <tr>
+            <td>${index + 1}</td>
+            <td><strong>${escapeHTML(item.containerNo)}</strong></td>
+            <td>${escapeHTML(item.origin)}</td>
+            <td>${escapeHTML(item.destination)}</td>
+            <td>${escapeHTML(item.arrival)}</td>
+            <td>
+                <span class="status ${statusClass(item.status)}">
+                    ${escapeHTML(item.status)}
+                </span>
+            </td>
+            <td>
+                <div class="actions">
+                    <button class="secondary"
+                        onclick="editContainer(${item.id})">Edit</button>
+                    <button class="danger"
+                        onclick="deleteContainer(${item.id})">Hapus</button>
+                </div>
+            </td>
+        </tr>
+    `).join("");
+}
+
+function openModal(id = null) {
+    editId = id;
+    document.getElementById("containerForm").reset();
+
+    if (id !== null) {
+        const item = containers.find(x => x.id === id);
+        if (!item) return;
+
+        document.getElementById("modalTitle").textContent =
+            "Edit Kontainer";
+
+        document.getElementById("containerNo").value =
+            item.containerNo;
+        document.getElementById("origin").value = item.origin;
+        document.getElementById("destination").value =
+            item.destination;
+        document.getElementById("arrival").value = item.arrival;
+        document.getElementById("status").value = item.status;
+    } else {
+        document.getElementById("modalTitle").textContent =
+            "Tambah Kontainer";
+    }
+
+    document.getElementById("modal").style.display = "flex";
+}
+
+function closeModal() {
+    document.getElementById("modal").style.display = "none";
+}
+
+function editContainer(id) {
+    openModal(id);
+}
+
+document.getElementById("containerForm").addEventListener(
+    "submit",
+    function(event) {
+        event.preventDefault();
+
+        const containerNo = document.getElementById("containerNo")
+            .value.trim().toUpperCase();
+
+        const duplicate = containers.some(item =>
+            item.containerNo.toLowerCase() === containerNo.toLowerCase()
+            && item.id !== editId
+        );
+
+        if (duplicate) {
+            alert("Nomor kontainer sudah terdaftar.");
+            return;
+        }
+
+        const item = {
+            id: editId !== null ? editId : Date.now(),
+            containerNo,
+            origin: document.getElementById("origin").value.trim(),
+            destination: document.getElementById("destination").value.trim(),
+            arrival: document.getElementById("arrival").value,
+            status: document.getElementById("status").value
+        };
+
+        if (editId !== null) {
+            containers = containers.map(x =>
+                x.id === editId ? item : x
+            );
+        } else {
+            containers.push(item);
+        }
+
+        saveData();
+        renderTable();
+        closeModal();
+    }
+);
+
+function deleteContainer(id) {
+    if (!confirm("Yakin ingin menghapus data kontainer ini?")) {
+        return;
+    }
+
+    containers = containers.filter(x => x.id !== id);
+    saveData();
+    renderTable();
+}
+
+function exportCSV() {
+    const headers = [
+        "Nomor Kontainer",
+        "Asal",
+        "Tujuan",
+        "Estimasi Tiba",
+        "Status"
+    ];
+
+    const rows = containers.map(item => [
+        item.containerNo,
+        item.origin,
+        item.destination,
+        item.arrival,
+        item.status
+    ]);
+
+    const csvCell = value =>
+        '"' + String(value).replace(/"/g, '""') + '"';
+
+    const csv = [headers, ...rows]
+        .map(row => row.map(csvCell).join(","))
+        .join("\n");
+
+    const blob = new Blob(["\uFEFF" + csv], {
+        type: "text/csv;charset=utf-8;"
+    });
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+
+    link.href = url;
+    link.download = "one-container-tracker.csv";
+    link.click();
+
+    URL.revokeObjectURL(url);
+}
+
+document.getElementById("search").addEventListener(
+    "input", renderTable
+);
+
+document.getElementById("filter").addEventListener(
+    "change", renderTable
+);
+
+renderTable();
+</script>
+
+</body>
+</html>
